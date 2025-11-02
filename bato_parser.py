@@ -8,7 +8,7 @@ import re
 
 class BatoToParser:
     """
-    Python reimplementation of the Batoto parser behavior:
+    Python implementation of the Batoto parser behavior:
     - get_list(page, order, filter_query)
     - get_details(manga_url)
     - get_pages(chapter_url)

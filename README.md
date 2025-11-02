@@ -33,7 +33,6 @@ sudo apt update && sudo apt install -y nodejs
 - utils.py — crypto helpers (evp_bytes_to_key, decrypt_batoto), generate_uid
 - models.py — dataclasses (Manga, MangaChapter, MangaPage, MangaTag)
 - run_parser.py — CLI that prints JSON to stdout
-- test_runner.py — CLI that writes JSON output to file (default `out.json`)
 
 ## Quick usage
 
@@ -79,7 +78,3 @@ From repository root.
 - Network errors are not heavily retried; consider adding timeouts/retries in `context.py`.
 - Decryption uses OpenSSL-style EVP_BytesToKey + AES-CBC; errors may indicate encoding or password problems.
 
-## Next steps (suggestions)
-- Add logging and configurable timeouts/retries.
-- Add unit tests for crypto functions and JS evaluation stub.
-- Harden error handling and add rate-limiting/backoff for production use.
