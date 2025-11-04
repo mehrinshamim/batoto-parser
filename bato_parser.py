@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from models import Manga, MangaTag, MangaChapter, MangaPage
 from utils import decrypt_batoto, generate_uid
-from typing import List, Optional
+from typing import List, Optional,Set
 import json
 import re
 
@@ -28,49 +28,92 @@ class BatoToParser:
             url = f"https://{self.domain}/search?word={query.replace(' ', '+')}&page={page}"
         else:
             url = f"https://{self.domain}/browse?sort={order}&page={page}"
+
         resp = self.ctx.http_get(url)
         soup = BeautifulSoup(resp.text, "lxml")
-        # detect no matches
         if soup.select_one(".browse-no-matches"):
             return []
-        # find series-list container
         root = soup.select_one("#series-list")
         if not root:
             return []
         result = []
         for div in root.find_all(recursive=False):
-            a = div.select_one("a")
-            if not a:
-                continue
-            href = a.get("href")
-            rel_href = href
-            public = a.get("href")
+            # --- Core fields ---
             title_el = div.select_one(".item-title")
             title = title_el.get_text(strip=True) if title_el else ""
-            cover = div.select_one("img[src]")
-            cover_url = cover.get("src") if cover else None
-            tags_el = div.select_one(".item-genre")
+            rel_href = title_el.get("href") if title_el else ""
+            public_url = urljoin(f"https://{self.domain}", rel_href)
+
+            cover_el = div.select_one(".item-cover img")
+            cover_url = urljoin(f"https://{self.domain}", cover_el["src"]) if cover_el else None
+
+            # --- Alt titles ---
+            alt_titles = set()
+            alias_el = div.select_one(".item-alias span.text-muted")
+            if alias_el:
+                for alt in alias_el.get_text(separator="/").split("/"):
+                    alt = alt.strip()
+                    if alt:
+                        alt_titles.add(alt)
+
+            # --- Genres / Tags ---
             tags = []
-            if tags_el:
-                for span in tags_el.find_all("span"):
-                    text = span.get_text(strip=True)
+            for span in div.select(".item-genre span"):
+                text = span.get_text(strip=True)
+                if text:
                     key = text.lower().replace(" ", "_")
                     tags.append(MangaTag(title=text.title(), key=key))
+
+            # --- Latest Chapter ---
+            chap_el = div.select_one(".item-volch a.visited")
+            chapter_title = chap_el.get_text(strip=True) if chap_el else None
+            chapter_url = chap_el.get("href") if chap_el else None
+
+            uploader_el = div.select_one('.item-volch a[href*="/user/"]')
+            scanlator = uploader_el["href"].split("/")[-1] if uploader_el else None
+
+
+            # --- Chapter object ---
+            chapters = None
+            if chapter_url:
+                chapters = [
+                    MangaChapter(
+                        id=generate_uid(chapter_url),
+                        title=chapter_title,
+                        number=float(re.search(r"\d+", chapter_title).group()) if re.search(r"\d+", chapter_title) else 0.0,
+                        url=chapter_url,
+                        scanlator=scanlator,
+                        upload_date_ms=None,
+                        preview=urljoin(f"https://{self.domain}", chapter_url),
+                    )
+                ]
+
+            # --- Final Manga object ---
             m = Manga(
                 id=generate_uid(rel_href),
                 title=title,
-                alt_titles=set(),
+                alt_titles=alt_titles,
                 url=rel_href,
-                public_url=urljoin(f"https://{self.domain}", public),
-                cover_url=urljoin(f"https://{self.domain}", cover_url) if cover_url else None,
+                public_url=public_url,
+                cover_url=cover_url,
                 large_cover_url=None,
                 description_html=None,
                 tags=tags,
                 state=None,
                 authors=set(),
+                originalLanguage=None,
+                translatedLanguage=None,
+                originalWorkStatus=None,
+                uploadStatus=None,
+                yearOfRelease=None,
+                chapterCount=0,
+                chapters=chapters
             )
+
             result.append(m)
+
         return result
+
 
     def get_details(self, manga: Manga) -> Manga:
         full = self.abs(manga.url)
@@ -79,6 +122,15 @@ class BatoToParser:
         mainer = soup.select_one("#mainer")
         if not mainer:
             return manga
+        # --- Extract alternate titles ---
+        alt_titles_set = set(manga.alt_titles)  # keep existing ones if any
+        alias_el = soup.select_one(".alias-set")
+        if alias_el:
+            raw_aliases = alias_el.get_text(separator=" ").strip()
+            # Split by "/" and clean extra spaces
+            aliases = [a.strip() for a in raw_aliases.split("/") if a.strip()]
+            alt_titles_set.update(aliases)
+
         details = mainer.select_one(".detail-set")
         attrs = {}
         if details:
@@ -104,6 +156,12 @@ class BatoToParser:
             for span in attrs["Genres:"].find_all("span"):
                 text = span.get_text(strip=True)
                 genres.append(MangaTag(title=text.title(), key=text.lower().replace(" ", "_")))
+        #language,status,yearOfRelease
+        originalLanguage = attrs["Original language:"].get_text(strip=True) if "Original language:" in attrs else None
+        translatedLanguage = attrs["Translated language:"].get_text(strip=True) if "Translated language:" in attrs else None
+        originalWorkStatus = attrs["Original work:"].get_text(strip=True) if "Original work:" in attrs else None
+        uploadStatus = attrs["Upload status:"].get_text(strip=True) if "Upload status:" in attrs else None
+        yearOfRelease = attrs["Year of Release:"].get_text(strip=True) if "Year of Release:" in attrs else None
         # chapters:
         chapters = []
         ep_list = soup.select_one(".episode-list .main")
@@ -117,7 +175,7 @@ class BatoToParser:
         return Manga(
             id=manga.id,
             title=title,
-            alt_titles=manga.alt_titles,
+            alt_titles=alt_titles_set,
             url=manga.url,
             public_url=manga.public_url,
             cover_url=manga.cover_url,
@@ -126,6 +184,13 @@ class BatoToParser:
             tags=list(set(manga.tags + genres)),
             state=None,
             authors={author} if author else manga.authors,
+            originalLanguage=originalLanguage,
+            translatedLanguage=translatedLanguage,
+            originalWorkStatus=originalWorkStatus,
+            uploadStatus=uploadStatus,
+            yearOfRelease=yearOfRelease,
+            chapterCount=len(chapters),
+            chapters=chapters,
         )
 
     def _parse_chapter(self, div, index):
@@ -153,7 +218,8 @@ class BatoToParser:
             number=float(index + 1),
             url=href,
             scanlator=scanlator,
-            upload_date_ms=upload_ms
+            upload_date_ms=upload_ms,
+            preview=urljoin(f"https://{self.domain}", href)
         )
 
     def _parse_relative_date(self, text: str) -> int:

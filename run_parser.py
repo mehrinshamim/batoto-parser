@@ -31,6 +31,13 @@ def make_min_manga(url, domain="bato.to"):
         tags=[],
         state=None,
         authors=set(),
+        originalLanguage=None,
+        translatedLanguage=None,
+        originalWorkStatus=None,
+        uploadStatus=None,
+        yearOfRelease=None,
+        chapterCount=0,        
+        chapters=[],  
     )
 
 def cmd_list(args, parser):

@@ -7,6 +7,16 @@ class MangaTag:
     key: str
     
 @dataclass
+class MangaChapter:
+    id: str
+    title: Optional[str]
+    number: float
+    url: str
+    scanlator: Optional[str]
+    upload_date_ms: int
+    preview: Optional[str]
+
+@dataclass
 class Manga:
     id: str
     title: str
@@ -19,15 +29,14 @@ class Manga:
     tags: List[MangaTag]
     state: Optional[str]
     authors: Set[str]
+    originalLanguage: Optional[str]
+    translatedLanguage: Optional[str]
+    originalWorkStatus: Optional[str]
+    uploadStatus: Optional[str]
+    yearOfRelease: Optional[str]
+    chapterCount: int
+    chapters: Optional[List[MangaChapter]]
 
-@dataclass
-class MangaChapter:
-    id: str
-    title: Optional[str]
-    number: float
-    url: str
-    scanlator: Optional[str]
-    upload_date_ms: int
 
 @dataclass
 class MangaPage:
