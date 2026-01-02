@@ -4,12 +4,7 @@
 [![Python versions](https://img.shields.io/pypi/pyversions/batoto-parser.svg)](https://pypi.org/project/batoto-parser/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Lightweight parser for Batoto-style manga sites. Provides both a command-line interface and a Python library for:
-
-- 📚 Listing/browsing manga
-- 🔍 Searching manga
-- 📖 Fetching manga details (metadata + chapters)
-- 🖼️ Retrieving chapter pages (with encrypted image URL decryption)
+Lightweight parser for Batoto-style manga sites. Provides both a command-line interface (CLI) and a Python library for metadata extraction and chapter decryption.
 
 ## Features
 
@@ -19,270 +14,133 @@ Lightweight parser for Batoto-style manga sites. Provides both a command-line in
 - **Fast**: Efficient parsing with minimal dependencies
 - **Typed**: Full type hints for better IDE support
 
-## Requirements
+---
 
-- Python 3.8+
-- Node.js (required for chapter page decryption)
+## 🚀 Quick Start
 
-### Installing Node.js (Linux)
+Get up and running in seconds.
 
-**Debian/Ubuntu:**
-```bash
-sudo apt update && sudo apt install -y nodejs
-```
-
-**Fedora/RHEL:**
-```bash
-sudo dnf install nodejs
-```
-
-**Arch Linux:**
-```bash
-sudo pacman -S nodejs
-```
-
-## Installation
-
-### From PyPI (recommended)
-
+### 1. Installation
 ```bash
 pip install batoto-parser
+
+# Search for a manga
+batoto-parser list --query "one piece"
+
+# Get chapter image links (Requires Node.js)
+batoto-parser pages [https://bato.to/title/12345-title/67890-ch-1](https://bato.to/title/12345-title/67890-ch-1)
 ```
 
-### From source
+---
 
+### Prerequisites & Node.js Alert (Very Important)
+
+## ⚡ Prerequisites: Node.js Requirement
+
+**Important:** To decrypt image URLs (the `pages` command), **Node.js** must be installed on your system. This tool uses Node to evaluate the site's decryption logic securely.
+
+| OS | Command to Install |
+| :--- | :--- |
+| **Ubuntu/Debian** | `sudo apt install nodejs` |
+| **Fedora/RHEL** | `sudo dnf install nodejs` |
+| **Arch Linux** | `sudo pacman -S nodejs` |
+| **MacOS** | `brew install node` |
+| **Windows** | Download from [nodejs.org](https://nodejs.org/) |
+
+---
+
+## 🛠 CLI Commands Overview
+
+The `batoto-parser` command provides several sub-commands. Use `--help` after any command for detailed flags.
+
+| Command | Description | Common Flag |
+| :--- | :--- | :--- |
+| `list` | Browse or search for manga titles. | `--query "name"` |
+| `details` | Fetch metadata and chapter lists for a series. | `--output file.json` |
+| `pages` | Decrypt and list all image URLs for a chapter. | `--domain custom.com` |
+
+### Advanced CLI Examples
 ```bash
-git clone https://github.com/yourusername/batoto-parser.git
-cd batoto-parser
-pip install -e .
-```
-
-### Development installation
-
-```bash
-pip install -e ".[dev]"
-```
-
-## CLI Usage
-
-After installation, the `batoto-parser` command will be available:
-
-### List/Browse Manga
-
-```bash
-# Browse first page
-batoto-parser list
-
 # Browse specific page
 batoto-parser list --page 2
 
-# Search for manga
-batoto-parser list --query "one piece"
-
-# Save results to file
-batoto-parser list --page 1 --output results.json
-
-# Use different domain
-batoto-parser list --domain custom-site.com
-```
-
-### Get Manga Details
-
-```bash
-# By path
-batoto-parser details /series/Some-Manga
-
-# By full URL
-batoto-parser details https://bato.to/series/Some-Manga
-
-# Save to file
+# Save manga details to a JSON file
 batoto-parser details /series/Some-Manga --output manga.json
+
+# Use a different domain
+batoto-parser list --domain custom-site.com --pretty
 ```
 
-### Get Chapter Pages
+---
 
-```bash
-# Get image URLs for a chapter
-batoto-parser pages /reader/12345
+### Library Usage (For Developers)
+## 📖 Library Usage
 
-# Save to file
-batoto-parser pages /reader/12345 --output chapter.json
-```
-
-### Options
-
-All commands support:
-- `--domain, -d`: Specify domain (default: bato.to)
-- `--output, -O`: Save output to file instead of stdout
-- `--pretty/--compact`: Pretty-print or compact JSON output
-- `--help`: Show detailed help
-
-## Library Usage
-
-Use batoto-parser as a library in your Python projects:
+Integrate the parser directly into your Python scripts:
 
 ```python
 from batoto_parser import BatoToParser, MangaLoaderContext
 
-# Initialize
+# Initialize context and parser
 ctx = MangaLoaderContext()
-parser = BatoToParser(ctx, domain="bato.to")
+parser = BatoToParser(ctx)
 
-# List manga
-mangas = parser.get_list(page=1)
-for manga in mangas:
-    print(f"{manga.title}: {manga.public_url}")
+# Get details for a specific manga
+manga = parser.get_details("/series/12345")
+print(f"Title: {manga.title}")
 
-# Search
-results = parser.get_list(page=1, query="one piece")
-
-# Get details
-detailed_manga = parser.get_details(mangas[0])
-print(f"Chapters: {detailed_manga.chapterCount}")
-
-# Get chapter pages (requires Node.js)
-pages = parser.get_pages("/reader/12345")
-for page in pages:
-    print(f"Page {page.pageNumber}: {page.imageUrl}")
+# Fetch decrypted pages (Node.js required)
+pages = parser.get_pages("/title/12345/67890")
+for p in pages:
+    print(f"Page {p.page_number}: {p.image_url}")
 ```
 
-See [examples/example_usage.py](examples/example_usage.py) for more examples.
+---
 
-## Project Structure
+### Troubleshooting & Project Structure
+## 🔧 Troubleshooting
 
-```
+| Issue | Solution |
+| :--- | :--- |
+| **"Cannot evaluate batoPass"** | Node.js is missing or not in your system PATH. Install Node.js. |
+| **Empty results** | The site may be using Cloudflare or the layout changed. Try a different `--domain`. |
+| **Network errors** | Check your connection or use a VPN if the domain is blocked in your region. |
+
+## 📂 Project Structure
+
+```text
 batoto-parser/
-├── src/
-│   └── batoto_parser/
-│       ├── __init__.py        # Package exports
-│       ├── __version__.py     # Version info
-│       ├── cli.py             # CLI interface (Typer)
-│       ├── parser.py          # Main parser logic
-│       ├── context.py         # HTTP session & JS eval
-│       ├── utils.py           # Crypto & utility functions
-│       └── models.py          # Data models
-├── tests/                     # Test suite
-├── examples/                  # Usage examples
-└── pyproject.toml            # Package configuration
+├── src/batoto_parser/   # Core logic (Parser, Models, CLI)
+├── tests/               # Pytest suite
+├── examples/            # Usage scripts
+└── pyproject.toml       # Build system & dependencies
 ```
 
-## API Reference
+---
 
-### Core Classes
+### Contributing, Changelog & Disclaimer
 
-- **`BatoToParser`**: Main parser class
-  - `get_list(page, order, query)`: List/search manga
-  - `get_details(manga)`: Get detailed manga info
-  - `get_pages(chapter_url)`: Get chapter image URLs
+## 🤝 Contributing
 
-- **`MangaLoaderContext`**: HTTP session manager with JS evaluation
+Contributions are welcome! 
 
-- **`Manga`**: Manga data model
-- **`MangaChapter`**: Chapter data model
-- **`MangaPage`**: Page data model
+1. **Fork** the Project.
+2. **Create** your Feature Branch (`git checkout -b feature/AmazingFeature`).
+3. **Run Tests** (`pytest`).
+4. **Push** to the Branch and open a **Pull Request**.
 
-### Utility Functions
+## 📜 Changelog
 
-- **`generate_uid(url)`**: Generate unique ID from URL
-- **`decrypt_batoto(encrypted, password)`**: Decrypt Batoto image URLs
-- **`evp_bytes_to_key(...)`**: OpenSSL key derivation
+Detailed changes for each release are documented in our [GitHub Releases](https://github.com/mehrinshamim/batoto-parser/releases) page.
 
-## Development
+* **v0.1.0**: Initial release (CLI + Library core).
 
-### Setup
+## ⚖️ License & Disclaimer
 
-```bash
-# Clone repository
-git clone https://github.com/mehrinshamim/batoto-parser.git
-cd batoto-parser
+**License:** Distributed under the [MIT License](LICENSE).
 
-# Create virtual environment
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+**Disclaimer:** This tool is for educational purposes only. Users are responsible for complying with the Terms of Service of any website they access. The authors are not responsible for any misuse.
 
-# Install with dev dependencies
-pip install -e ".[dev]"
-```
+---
 
-### Testing
-
-```bash
-# Run tests
-pytest
-
-# With coverage
-pytest --cov=batoto_parser --cov-report=html
-
-# Run only unit tests (skip integration tests)
-pytest -m "not integration"
-```
-
-### Code Quality
-
-```bash
-# Format code
-black src/ tests/
-
-# Lint
-ruff check src/ tests/
-
-# Type check
-mypy src/
-```
-
-## Troubleshooting
-
-### "Cannot evaluate batoPass" error
-
-Ensure Node.js is installed and available on your PATH:
-
-```bash
-node --version  # Should show version number
-```
-
-### Empty results
-
-If parsing returns empty results, the site layout may have changed. Check:
-1. Site is accessible
-2. Selectors in `parser.py` match current HTML structure
-
-### Network errors
-
-Add timeouts or retries in `context.py` for unstable connections.
-
-## Contributing
-
-Contributions are welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Run tests (`pytest`)
-5. Commit your changes (`git commit -m 'Add amazing feature'`)
-6. Push to branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Disclaimer
-
-This tool is for educational purposes only. Please respect the websites' terms of service and robots.txt. The authors are not responsible for misuse of this tool.
-
-## Changelog
-
-### 0.1.0 (2024-XX-XX)
-
-- Initial release
-- CLI tool with list, details, and pages commands
-- Library API for programmatic access
-- Support for custom domains
-- Rich terminal output
-- Full test suite
-
-## Acknowledgments
-
-- Built with [Typer](https://typer.tiangolo.com/) for CLI
-- [Rich](https://rich.readthedocs.io/) for beautiful terminal output
-- [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/) for HTML parsing
+**Maintained by:** [mehrinshamim/Org]
