@@ -7,6 +7,20 @@ import json
 import re
 
 
+SELECTORS = {
+    "bato.si": {
+        "series_list": "#series-list",
+        "chapter_list": ".episode-list .main",
+        "chapter_link": "a.chapt",
+    },
+    "bato.to": {
+        "series_list": "#series-list",
+        "chapter_list": ".episode-list .main",
+        "chapter_link": "a.chapt",
+    }
+}
+
+
 class BatoToParser:
     """
     Python implementation of the Batoto parser behavior:
@@ -34,7 +48,9 @@ class BatoToParser:
         soup = BeautifulSoup(resp.text, "lxml")
         if soup.select_one(".browse-no-matches"):
             return []
-        root = soup.select_one("#series-list")
+        selectors = SELECTORS.get(self.domain, SELECTORS["bato.to"])
+        root = soup.select_one(selectors["series_list"])
+
         if not root:
             return []
         result = []
@@ -165,7 +181,9 @@ class BatoToParser:
         yearOfRelease = attrs["Year of Release:"].get_text(strip=True) if "Year of Release:" in attrs else None
         # chapters:
         chapters = []
-        ep_list = soup.select_one(".episode-list .main")
+        selectors = SELECTORS.get(self.domain, SELECTORS["bato.to"])
+        ep_list = soup.select_one(selectors["chapter_list"])
+
         if ep_list:
             children = ep_list.find_all(recursive=False)
             # the Kotlin reversed = true; mapChapters reversed -> keep order reversed
@@ -195,7 +213,9 @@ class BatoToParser:
         )
 
     def _parse_chapter(self, div, index):
-        a = div.select_one("a.chapt")
+        selectors = SELECTORS.get(self.domain, SELECTORS["bato.to"])
+        a = div.select_one(selectors["chapter_link"])
+
         if not a:
             return None
         href = a.get("href")
