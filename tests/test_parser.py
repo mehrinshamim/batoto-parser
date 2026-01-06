@@ -7,7 +7,7 @@ Run with: pytest
 import pytest
 from batoto_parser import BatoToParser, MangaLoaderContext
 from batoto_parser.utils import generate_uid
-
+from batoto_parser.config import DEFAULT_DOMAIN
 
 def test_generate_uid():
     """Test UID generation."""
@@ -29,9 +29,9 @@ def test_generate_uid():
 def test_parser_initialization():
     """Test parser can be initialized."""
     ctx = MangaLoaderContext()
-    parser = BatoToParser(ctx, domain="bato.si")
+    parser = BatoToParser(ctx, domain=DEFAULT_DOMAIN)
     
-    assert parser.domain == "bato.si"
+    assert parser.domain == DEFAULT_DOMAIN
     assert parser.ctx is not None
 
 
@@ -53,7 +53,7 @@ def test_list_manga_basic():
     Mark as integration test to skip in CI if needed.
     """
     ctx = MangaLoaderContext()
-    parser = BatoToParser(ctx, domain="bato.si")
+    parser = BatoToParser(ctx, domain=DEFAULT_DOMAIN)
     
     try:
         mangas = parser.get_list(page=1)

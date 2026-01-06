@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+from .config import DEFAULT_DOMAIN
 from urllib.parse import urljoin
 from batoto_parser.models import Manga, MangaTag, MangaChapter, MangaPage
 from batoto_parser.utils import decrypt_batoto, generate_uid
@@ -15,7 +16,7 @@ class BatoToParser:
     - get_pages(chapter_url)
     """
 
-    def __init__(self, ctx, domain="bato.si"):
+    def __init__(self, ctx, domain=DEFAULT_DOMAIN):
         self.ctx = ctx  # MangaLoaderContext instance
         self.domain = domain
 
