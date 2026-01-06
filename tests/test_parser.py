@@ -29,9 +29,9 @@ def test_generate_uid():
 def test_parser_initialization():
     """Test parser can be initialized."""
     ctx = MangaLoaderContext()
-    parser = BatoToParser(ctx, domain="bato.to")
+    parser = BatoToParser(ctx, domain="bato.si")
     
-    assert parser.domain == "bato.to"
+    assert parser.domain == "bato.si"
     assert parser.ctx is not None
 
 
@@ -53,7 +53,7 @@ def test_list_manga_basic():
     Mark as integration test to skip in CI if needed.
     """
     ctx = MangaLoaderContext()
-    parser = BatoToParser(ctx, domain="bato.to")
+    parser = BatoToParser(ctx, domain="bato.si")
     
     try:
         mangas = parser.get_list(page=1)

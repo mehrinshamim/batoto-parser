@@ -15,7 +15,7 @@ class BatoToParser:
     - get_pages(chapter_url)
     """
 
-    def __init__(self, ctx, domain="bato.to"):
+    def __init__(self, ctx, domain="bato.si"):
         self.ctx = ctx  # MangaLoaderContext instance
         self.domain = domain
 

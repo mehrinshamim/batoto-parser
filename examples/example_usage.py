@@ -16,7 +16,7 @@ def example_list_manga():
     print("=" * 60)
     
     ctx = MangaLoaderContext()
-    parser = BatoToParser(ctx, domain="bato.to")
+    parser = BatoToParser(ctx, domain="bato.si")
     
     # Get first page
     mangas = parser.get_list(page=1)
@@ -35,7 +35,7 @@ def example_search_manga():
     print("=" * 60)
     
     ctx = MangaLoaderContext()
-    parser = BatoToParser(ctx, domain="bato.to")
+    parser = BatoToParser(ctx, domain="bato.si")
     
     # Search
     query = "one piece"
@@ -55,7 +55,7 @@ def example_get_details():
     print("=" * 60)
     
     ctx = MangaLoaderContext()
-    parser = BatoToParser(ctx, domain="bato.to")
+    parser = BatoToParser(ctx, domain="bato.si")
     
     # Create minimal manga object (you'd get this from list/search)
     manga = Manga(
@@ -63,7 +63,7 @@ def example_get_details():
         title="Example Manga",
         alt_titles=set(),
         url="/series/Example-Manga",
-        public_url="https://bato.to/series/Example-Manga",
+        public_url="https://bato.si/series/Example-Manga",
         cover_url=None,
         large_cover_url=None,
         description_html=None,
@@ -100,7 +100,7 @@ def example_get_pages():
     print("=" * 60)
     
     ctx = MangaLoaderContext()
-    parser = BatoToParser(ctx, domain="bato.to")
+    parser = BatoToParser(ctx, domain="bato.si")
     
     # Get pages for a chapter (requires Node.js)
     chapter_url = "/reader/12345"  # Replace with real chapter URL

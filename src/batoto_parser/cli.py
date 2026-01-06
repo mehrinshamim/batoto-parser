@@ -56,7 +56,7 @@ def to_json(obj):
     return json.dumps(obj, default=conv, indent=2)
 
 
-def make_min_manga(url: str, domain: str = "bato.to") -> Manga:
+def make_min_manga(url: str, domain: str = "bato.si") -> Manga:
     """Create minimal Manga object from URL."""
     rel = url
     if url.startswith("http"):
@@ -90,7 +90,7 @@ def list_manga(
     page: int = typer.Option(1, "--page", "-p", help="Page number to fetch"),
     order: str = typer.Option("update.za", "--order", "-o", help="Sort order"),
     query: Optional[str] = typer.Option(None, "--query", "-q", help="Search query"),
-    domain: str = typer.Option("bato.to", "--domain", "-d", help="Domain to parse"),
+    domain: str = typer.Option("bato.si", "--domain", "-d", help="Domain to parse"),
     output: Optional[str] = typer.Option(None, "--output", "-O", help="Output file (default: stdout)"),
     pretty: bool = typer.Option(True, "--pretty/--compact", help="Pretty print JSON"),
 ):
@@ -137,7 +137,7 @@ def list_manga(
 @app.command(name="details")
 def get_details(
     manga_url: str = typer.Argument(..., help="Manga URL or path (e.g., /series/Some-Manga)"),
-    domain: str = typer.Option("bato.to", "--domain", "-d", help="Domain to parse"),
+    domain: str = typer.Option("bato.si", "--domain", "-d", help="Domain to parse"),
     output: Optional[str] = typer.Option(None, "--output", "-O", help="Output file (default: stdout)"),
     pretty: bool = typer.Option(True, "--pretty/--compact", help="Pretty print JSON"),
 ):
@@ -148,7 +148,7 @@ def get_details(
     
         batoto-parser details /series/Some-Manga
         
-        batoto-parser details https://bato.to/series/Some-Manga
+        batoto-parser details https://bato.si/series/Some-Manga
         
         batoto-parser details /series/Some-Manga --output manga.json
     """
@@ -183,7 +183,7 @@ def get_details(
 @app.command(name="pages")
 def get_pages(
     chapter_url: str = typer.Argument(..., help="Chapter URL or path (e.g., /reader/12345)"),
-    domain: str = typer.Option("bato.to", "--domain", "-d", help="Domain to parse"),
+    domain: str = typer.Option("bato.si", "--domain", "-d", help="Domain to parse"),
     output: Optional[str] = typer.Option(None, "--output", "-O", help="Output file (default: stdout)"),
     pretty: bool = typer.Option(True, "--pretty/--compact", help="Pretty print JSON"),
 ):
