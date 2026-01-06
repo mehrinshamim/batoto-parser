@@ -16,6 +16,7 @@ app = typer.Typer(
     name="batoto-parser",
     help="Lightweight parser for Batoto-style manga sites",
     add_completion=False,
+    no_args_is_help=True, # Show help if no args are provided
 )
 console = Console()
 error_console = Console(stderr=True)
