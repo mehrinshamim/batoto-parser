@@ -135,30 +135,30 @@ Batoto-style sites may change layouts frequently. If fixing parsing issues:
 
 ## Submitting a Pull Request
 
-### Fork the repository
-### Create a feature branch:
+1. ***Fork the repository***
+2. ***Create a feature branch:***
 ```bash
 git checkout -b feature/your-feature-name
 ```
-### Make your changes
-### Run tests and checks
-### Commit with a clear message:
+3. ***Make your changes***
+4. ***Run tests and checks***
+5. ***Commit with a clear message:***
 ```bash
 git commit -m "Add: short description of change"
 ```
-### Push your branch:
+6. ***Push your branch:***
 ```bash
 git push origin feature/your-feature-name
 ```
-### Open a Pull Request on GitHub
-### Commit Message Guidelines
+7. ***Open a Pull Request on GitHub***
+8. ***Commit Message Guidelines***
 Use clear, descriptive messages:
 + Fix: handle empty chapter list
 + Add: support saving pages output to file
 + Improve: robustness of decryption logic
 + Refactor: simplify parser context handling
 
-### Reporting Issues
+## Reporting Issues
 When reporting bugs, please include:
 
 + Command or code snippet used
@@ -169,10 +169,10 @@ When reporting bugs, please include:
 + Site blocks or bans
 + Login-only or paywalled content
 
-### Code of Conduct
+## Code of Conduct
 By contributing, you agree to uphold respectful and constructive communication. Harassment or abusive behavior will not be tolerated.
 
-### Questions or Help
+## Questions or Help
 + Open an Issue for bugs or feature requests
 + Use Discussions for questions or design ideas
 + Check existing issues before opening a new one
