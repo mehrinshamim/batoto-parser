@@ -1,6 +1,7 @@
 import hashlib
+
 from Crypto.Cipher import AES
-from typing import Tuple
+
 
 def evp_bytes_to_key(password: bytes, salt: bytes, key_len: int, iv_len: int):
     """
