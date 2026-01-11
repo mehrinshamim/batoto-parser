@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   tests:
-    name: Run tests on Python 3.9
+    name: Run tests
     runs-on: ubuntu-latest
 
     steps:
