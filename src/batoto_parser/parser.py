@@ -1,10 +1,12 @@
-from bs4 import BeautifulSoup
-from urllib.parse import urljoin
-from batoto_parser.models import Manga, MangaTag, MangaChapter, MangaPage
-from batoto_parser.utils import decrypt_batoto, generate_uid
-from typing import List, Optional,Set
 import json
 import re
+from typing import List, Optional
+from urllib.parse import urljoin
+
+from bs4 import BeautifulSoup
+
+from batoto_parser.models import Manga, MangaChapter, MangaPage, MangaTag
+from batoto_parser.utils import decrypt_batoto, generate_uid
 
 
 class BatoToParser:
@@ -225,7 +227,6 @@ class BatoToParser:
 
     def _parse_relative_date(self, text: str) -> int:
         # returns epoch ms for approximate date
-        import time
         from datetime import datetime, timedelta
         if not text:
             return 0

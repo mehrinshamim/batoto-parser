@@ -1,7 +1,6 @@
 """CLI interface for batoto-parser using Typer."""
 
 import json
-import sys
 from typing import Optional
 from urllib.parse import urljoin
 
@@ -9,7 +8,7 @@ import typer
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
-from batoto_parser import BatoToParser, MangaLoaderContext, Manga, __version__
+from batoto_parser import BatoToParser, Manga, MangaLoaderContext, __version__
 from batoto_parser.utils import generate_uid
 
 app = typer.Typer(
@@ -42,7 +41,7 @@ def main(
 ):
     """
     Batoto Parser - Parse Batoto-style manga sites.
-    
+
     Supports browsing, searching, fetching manga details, and chapter pages.
     """
     pass
@@ -63,7 +62,7 @@ def make_min_manga(url: str, domain: str = "bato.si") -> Manga:
     if url.startswith("http"):
         parsed = url.split(f"https://{domain}")[-1]
         rel = parsed or url
-    
+
     return Manga(
         id=generate_uid(rel),
         title="",
@@ -97,15 +96,15 @@ def list_manga(
 ):
     """
     List/browse manga from the site.
-    
+
     Examples:
-    
+
         batoto-parser list
-        
+
         batoto-parser list --page 2
-        
+
         batoto-parser list --query "one piece"
-        
+
         batoto-parser list --page 1 --output results.json
     """
     try:
@@ -116,23 +115,23 @@ def list_manga(
             transient=True,
         ) as progress:
             progress.add_task(description="Fetching manga list...", total=None)
-            
+
             ctx = MangaLoaderContext()
             parser = BatoToParser(ctx, domain=domain)
             mangas = parser.get_list(page=page, order=order, query=query)
-        
+
         result = to_json(mangas) if pretty else json.dumps(mangas, default=lambda o: o.__dict__ if hasattr(o, "__dict__") else str(o))
-        
+
         if output:
             with open(output, "w", encoding="utf-8") as f:
                 f.write(result)
             console.print(f"[green]✓[/green] Results saved to {output}")
         else:
             typer.echo(result)
-            
+
     except Exception as e:
         typer.echo(f"Error: {e}", err=True)
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
 
 @app.command(name="details")
@@ -144,13 +143,13 @@ def get_details(
 ):
     """
     Get detailed information about a specific manga.
-    
+
     Examples:
-    
+
         batoto-parser details /series/Some-Manga
-        
+
         batoto-parser details https://bato.si/series/Some-Manga
-        
+
         batoto-parser details /series/Some-Manga --output manga.json
     """
     try:
@@ -161,24 +160,24 @@ def get_details(
             transient=True,
         ) as progress:
             progress.add_task(description="Fetching manga details...", total=None)
-            
+
             ctx = MangaLoaderContext()
             parser = BatoToParser(ctx, domain=domain)
             manga = make_min_manga(manga_url, domain=domain)
             details_data = parser.get_details(manga)
-        
+
         result = to_json(details_data) if pretty else json.dumps(details_data, default=lambda o: o.__dict__ if hasattr(o, "__dict__") else str(o))
-        
+
         if output:
             with open(output, "w", encoding="utf-8") as f:
                 f.write(result)
             console.print(f"[green]✓[/green] Details saved to {output}")
         else:
             typer.echo(result)
-            
+
     except Exception as e:
         typer.echo(f"Error: {e}", err=True)
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
 
 @app.command(name="pages")
@@ -190,13 +189,13 @@ def get_pages(
 ):
     """
     Get image URLs for a specific chapter.
-    
+
     Requires Node.js installed on your system for JavaScript evaluation.
-    
+
     Examples:
-    
+
         batoto-parser pages /reader/12345
-        
+
         batoto-parser pages /reader/12345 --output chapter.json
     """
     try:
@@ -207,23 +206,23 @@ def get_pages(
             transient=True,
         ) as progress:
             progress.add_task(description="Fetching chapter pages...", total=None)
-            
+
             ctx = MangaLoaderContext()
             parser = BatoToParser(ctx, domain=domain)
             pages_data = parser.get_pages(chapter_url)
-        
+
         result = to_json(pages_data) if pretty else json.dumps(pages_data, default=lambda o: o.__dict__ if hasattr(o, "__dict__") else str(o))
-        
+
         if output:
             with open(output, "w", encoding="utf-8") as f:
                 f.write(result)
             console.print(f"[green]✓[/green] Pages saved to {output}")
         else:
             typer.echo(result)
-            
+
     except Exception as e:
         typer.echo(f"Error: {e}", err=True)
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
 
 def cli_main():

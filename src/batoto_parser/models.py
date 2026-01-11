@@ -1,11 +1,12 @@
 from dataclasses import dataclass
 from typing import List, Optional, Set
 
+
 @dataclass(frozen=True)
 class MangaTag:
     title: str
     key: str
-    
+
 @dataclass
 class MangaChapter:
     id: str
