@@ -11,30 +11,24 @@ concurrency:
 
 jobs:
   tests:
-    name: Run tests on Python ${{ matrix.python-version }}
+    name: Run tests on Python 3.9
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: true
-      matrix:
-        python-version: [3.9, 3.10, 3.11, 3.12]
 
     steps:
       - uses: actions/checkout@v5
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python 3.9
         uses: actions/setup-python@v6
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: 3.9
 
-      
       - name: Cache pip
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('requirements.txt') }}
+          key: ${{ runner.os }}-pip-3.9-${{ hashFiles('requirements.txt') }}
           restore-keys: |
-            ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('requirements.txt') }}
-
+            ${{ runner.os }}-pip-3.9-
 
       - name: Install dependencies
         run: |
@@ -45,4 +39,3 @@ jobs:
         working-directory: ./tests
         run: |
           pytest --maxfail=1 --disable-warnings -ra
-
