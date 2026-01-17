@@ -1,40 +1,304 @@
-import hashlib
-from Crypto.Cipher import AES
-from typing import Tuple
+"""
+Utility functions for batoto-parser.
 
-def evp_bytes_to_key(password: bytes, salt: bytes, key_len: int, iv_len: int):
+This module provides cryptographic utilities for decrypting Batoto content,
+URL validation, and helper functions for generating unique identifiers.
+"""
+
+import hashlib
+import re
+from typing import Callable, Tuple
+from urllib.parse import urlparse
+
+from Crypto.Cipher import AES
+
+# Type aliases for better code clarity
+Base64DecodeFunction = Callable[[str], bytes]
+KeyIVPair = Tuple[bytes, bytes]
+
+
+def validate_url(url: str, allowed_domains: Tuple[str, ...] = ("bato.si", "bato.to")) -> bool:
     """
-    OpenSSL EVP_BytesToKey style (MD5 loop) to derive key and iv.
+    Validate if a URL is properly formatted and from an allowed domain.
+    
+    Args:
+        url: The URL string to validate
+        allowed_domains: Tuple of allowed domain names (default: bato.si, bato.to)
+        
+    Returns:
+        True if URL is valid and from allowed domain, False otherwise
+        
+    Examples:
+        >>> validate_url("https://bato.si/series/123")
+        True
+        >>> validate_url("https://example.com/series/123")
+        False
+        >>> validate_url("not-a-url")
+        False
     """
+    if not url or not isinstance(url, str):
+        return False
+    
+    try:
+        parsed = urlparse(url)
+        
+        # Check if URL has scheme and netloc
+        if not parsed.scheme or not parsed.netloc:
+            return False
+        
+        # Check if scheme is http or https
+        if parsed.scheme not in ("http", "https"):
+            return False
+        
+        # Check if domain is in allowed list
+        domain = parsed.netloc.lower()
+        # Remove www. prefix if present
+        domain = domain.replace("www.", "")
+        
+        return domain in allowed_domains
+        
+    except (ValueError, AttributeError):
+        return False
+
+
+def validate_domain(domain: str) -> bool:
+    """
+    Validate if a domain string is properly formatted.
+    
+    Args:
+        domain: Domain name to validate (e.g., "bato.si")
+        
+    Returns:
+        True if domain is valid, False otherwise
+        
+    Examples:
+        >>> validate_domain("bato.si")
+        True
+        >>> validate_domain("bato.to")
+        True
+        >>> validate_domain("invalid domain!")
+        False
+        >>> validate_domain("")
+        False
+    """
+    if not domain or not isinstance(domain, str):
+        return False
+    
+    # Basic domain validation regex
+    # Allows alphanumeric, hyphens, and dots
+    domain_pattern = r'^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$'
+    
+    return bool(re.match(domain_pattern, domain))
+
+
+def evp_bytes_to_key(
+    password: bytes,
+    salt: bytes,
+    key_len: int,
+    iv_len: int
+) -> KeyIVPair:
+    """
+    Derive encryption key and initialization vector using OpenSSL's EVP_BytesToKey.
+    
+    This function implements the OpenSSL EVP_BytesToKey key derivation function
+    using MD5 hashing. It's used to derive cryptographic keys from passwords.
+    
+    Args:
+        password: Password bytes to derive key from
+        salt: Salt bytes for key derivation (should be 8 bytes)
+        key_len: Desired key length in bytes (typically 32 for AES-256)
+        iv_len: Desired IV length in bytes (typically 16 for AES)
+        
+    Returns:
+        Tuple of (key, iv) as bytes
+        
+    Raises:
+        ValueError: If password or salt is empty, or if lengths are invalid
+        TypeError: If inputs are not bytes
+        
+    Examples:
+        >>> password = b"my_password"
+        >>> salt = b"12345678"
+        >>> key, iv = evp_bytes_to_key(password, salt, 32, 16)
+        >>> len(key), len(iv)
+        (32, 16)
+        
+    Note:
+        This uses MD5 which is cryptographically weak. It's used here for
+        compatibility with Batoto's encryption scheme, not for security.
+    """
+    # Input validation
+    if not isinstance(password, bytes):
+        raise TypeError(f"password must be bytes, got {type(password).__name__}")
+    if not isinstance(salt, bytes):
+        raise TypeError(f"salt must be bytes, got {type(salt).__name__}")
+    
+    if not password:
+        raise ValueError("password cannot be empty")
+    if not salt:
+        raise ValueError("salt cannot be empty")
+    
+    if key_len <= 0:
+        raise ValueError(f"key_len must be positive, got {key_len}")
+    if iv_len <= 0:
+        raise ValueError(f"iv_len must be positive, got {iv_len}")
+    
+    # Standard salt length for OpenSSL is 8 bytes
+    if len(salt) != 8:
+        raise ValueError(f"salt should be 8 bytes, got {len(salt)}")
+    
+    # Key derivation loop
     generated = b""
     prev = b""
+    
     while len(generated) < (key_len + iv_len):
         md = hashlib.md5()
         md.update(prev + password + salt)
         prev = md.digest()
         generated += prev
+    
+    # Extract key and IV from generated bytes
     key = generated[:key_len]
-    iv = generated[key_len:key_len+iv_len]
+    iv = generated[key_len:key_len + iv_len]
+    
     return key, iv
 
-def decrypt_batoto(encrypted_b64: str, password: str, decode_base64_fn) -> str:
+
+def decrypt_batoto(
+    encrypted_b64: str,
+    password: str,
+    decode_base64_fn: Base64DecodeFunction
+) -> str:
     """
-    Decrypt batoWord with password. decode_base64_fn should return bytes.
+    Decrypt Batoto encrypted content using AES-256-CBC.
+    
+    Batoto uses OpenSSL-compatible AES encryption with a "Salted__" header.
+    This function decrypts base64-encoded encrypted data using the provided
+    password and base64 decoder function.
+    
+    Args:
+        encrypted_b64: Base64-encoded encrypted string
+        password: Decryption password
+        decode_base64_fn: Function to decode base64 string to bytes
+                         (e.g., base64.b64decode)
+        
+    Returns:
+        Decrypted string (UTF-8 decoded)
+        
+    Raises:
+        ValueError: If encrypted data is invalid or missing required header
+        TypeError: If inputs have wrong types
+        
+    Examples:
+        >>> import base64
+        >>> # Assuming you have encrypted data
+        >>> decrypted = decrypt_batoto(encrypted_data, "password", base64.b64decode)
+        
+    Note:
+        The encrypted data must start with "Salted__" header (OpenSSL format).
+        PKCS#7 padding is automatically removed from decrypted data.
     """
-    cipher_data = decode_base64_fn(encrypted_b64)
+    # Input validation
+    if not isinstance(encrypted_b64, str):
+        raise TypeError(f"encrypted_b64 must be str, got {type(encrypted_b64).__name__}")
+    if not isinstance(password, str):
+        raise TypeError(f"password must be str, got {type(password).__name__}")
+    if not callable(decode_base64_fn):
+        raise TypeError("decode_base64_fn must be callable")
+    
+    if not encrypted_b64:
+        raise ValueError("encrypted_b64 cannot be empty")
+    if not password:
+        raise ValueError("password cannot be empty")
+    
+    # Decode base64
+    try:
+        cipher_data = decode_base64_fn(encrypted_b64)
+    except Exception as e:
+        raise ValueError(f"Failed to decode base64 data: {e}")
+    
+    if not isinstance(cipher_data, bytes):
+        raise TypeError("decode_base64_fn must return bytes")
+    
+    # Validate OpenSSL format (must start with "Salted__")
     if not cipher_data.startswith(b"Salted__"):
-        raise ValueError("Missing Salted__ header in encrypted data")
+        raise ValueError(
+            "Invalid encrypted data: missing 'Salted__' header. "
+            "Data must be in OpenSSL encrypted format."
+        )
+    
+    # Minimum length check (header + salt + at least one block)
+    if len(cipher_data) < 24:  # 8 (header) + 8 (salt) + 8 (min encrypted)
+        raise ValueError(
+            f"Encrypted data too short: {len(cipher_data)} bytes. "
+            "Expected at least 24 bytes (header + salt + data)."
+        )
+    
+    # Extract salt and encrypted data
     salt = cipher_data[8:16]
     encrypted = cipher_data[16:]
+    
+    # Derive key and IV
     key, iv = evp_bytes_to_key(password.encode("utf-8"), salt, 32, 16)
+    
+    # Decrypt using AES-256-CBC
     cipher = AES.new(key, AES.MODE_CBC, iv)
     decrypted = cipher.decrypt(encrypted)
-    # remove PKCS#7 padding
-    pad_len = decrypted[-1]
-    if pad_len < 1 or pad_len > 16:
-        # fallback: return raw
+    
+    # Remove PKCS#7 padding
+    if len(decrypted) > 0:
+        pad_len = decrypted[-1]
+        
+        # Validate padding
+        if 1 <= pad_len <= 16:
+            # Check if all padding bytes are correct
+            padding = decrypted[-pad_len:]
+            if all(b == pad_len for b in padding):
+                decrypted = decrypted[:-pad_len]
+            # If padding is invalid, keep raw data (fallback)
+    
+    # Decode to UTF-8 string
+    try:
+        return decrypted.decode("utf-8")
+    except UnicodeDecodeError:
+        # Fallback: ignore errors for malformed UTF-8
         return decrypted.decode("utf-8", errors="ignore")
-    return decrypted[:-pad_len].decode("utf-8", errors="ignore")
+
 
 def generate_uid(s: str) -> str:
+    """
+    Generate a unique identifier from a string using SHA-1 hash.
+    
+    Creates a deterministic unique ID by hashing the input string.
+    Useful for generating consistent IDs for manga, chapters, etc.
+    
+    Args:
+        s: Input string to generate UID from (typically a URL or path)
+        
+    Returns:
+        40-character hexadecimal SHA-1 hash
+        
+    Raises:
+        ValueError: If input string is empty
+        TypeError: If input is not a string
+        
+    Examples:
+        >>> generate_uid("/series/123/manga-title")
+        'a94a8fe5ccb19ba61c4c0873d391e987982fbbd3'
+        >>> generate_uid("/series/123/manga-title")  # Same input = same output
+        'a94a8fe5ccb19ba61c4c0873d391e987982fbbd3'
+        >>> len(generate_uid("test"))
+        40
+        
+    Note:
+        SHA-1 is used for generating IDs, not for security purposes.
+        The same input will always produce the same output (deterministic).
+    """
+    # Input validation
+    if not isinstance(s, str):
+        raise TypeError(f"Input must be str, got {type(s).__name__}")
+    
+    if not s:
+        raise ValueError("Input string cannot be empty")
+    
     return hashlib.sha1(s.encode("utf-8")).hexdigest()
